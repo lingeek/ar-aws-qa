@@ -1,0 +1,237 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Security groups in environment QA - SG template - Generated from Jenkins",
+  "Parameters": {
+    "TAGPROJECT": {
+      "Description": "Project name",
+      "Type": "String",
+      "AllowedValues": [
+        "QAEnvironment"
+      ],
+      "Default": "QAEnvironment"
+    },
+    "TAGClass": {
+      "Description": "Accounting class",
+      "Type": "String",
+      "Default": "ARaul"
+    },
+    "TAGClassProject": {
+      "Description": "Accounting class for project",
+      "Type": "String",
+      "Default": "QA"
+    },
+    "TAGCostCenter": {
+      "Description": "Cost center for project",
+      "Type": "String",
+      "Default": "22000"
+    },
+    "TAGEnvironment": {
+      "Description": "This is the environment.",
+      "Type": "String",
+      "AllowedValues": [
+        "Test",
+        "QA",
+        "Production",
+        "ProdInfra"
+      ]
+
+    },
+    "TAGTier1": {
+      "Description": "Tier 1, exposed to internet",
+      "Type": "String",
+      "Default": "1"
+    },
+    "TAGTier2": {
+      "Description": "Tier 2, inside DMZ",
+      "Type": "String",
+      "Default": "2"
+    },
+    "TAGTier3": {
+      "Description": "Tier 3, inside secure zone, RDS, ELC, SQS",
+      "Type": "String",
+      "Default": "3"
+    },
+    "SGIDSSH": {
+      "Description": "Security group ID SSH",
+      "Type": "String",
+      "AllowedValues": [
+        "QA00-01-SSH"
+
+      ],
+      "Default": "QA00-01-SSH"
+
+    },
+    "SGIDINFRA": {
+      "Description": "Security group ID Infrastructure",
+      "Type": "String",
+      "AllowedValues": [
+        "QA00-01-Puppet",
+        "QA00-02-Grafana",
+        "QA00-03-Monitoring"
+        ]
+
+
+    }
+
+  },
+
+  "Resources": {
+    "ComponentSGforInfrastructure":{
+      "Type":"AWS::EC2::SecurityGroup",
+      "Metadata" : {
+        "Comment1" : "This is the security group for EC2 that is allowing us to enable Puppet, Garafana and Nagios"
+
+
+      },
+      "Properties":{
+        "GroupDescription":"Allow connections to server",
+        "VpcId":{
+          "Fn::ImportValue":{"Fn::Sub":"Export::${TAGEnvironment}-VPC" }
+        },
+        "SecurityGroupIngress":[
+          {"IpProtocol":"tcp","FromPort":"22","ToPort":"22","CidrIp":"10.4.0.0/21","Description": "Access from VPCTooling to SSH"},
+          {"IpProtocol":"tcp","FromPort":"22","ToPort":"22","CidrIp":"10.4.24.0/21","Description": "Access from VPCTooling to SSH"},
+          {"IpProtocol":"tcp","FromPort":"8140","ToPort":"8140","CidrIp":"10.4.0.5/32","Description": "Access from VPCTooling puppet server to EC2 puppet agent"},
+          {"IpProtocol":"tcp","FromPort":"5666","ToPort":"5666","CidrIp":"10.4.0.0/21", "Description": "Access from VPCTooling nagios to EC2 nrpe agent"},
+          {"IpProtocol":"tcp","FromPort":"8080","ToPort":"8080","CidrIp":"0.0.0.0/0","Description": "Access from ELB to EC2 instance on port 8080"},
+          { "IpProtocol" : "icmp", "FromPort" : "8", "ToPort" : "-1", "CidrIp" : "10.4.0.0/16","Description": "Enable ICMP ping" }
+
+
+
+        ],
+        "Tags":[
+          {
+            "Key":"Name",
+            "Value": {"Fn::Join": ["",["SG-EC2-Infra-",{"Ref": "TAGPROJECT"}]]}
+          },
+
+          {
+            "Key":"Environment",
+            "Value":{
+              "Ref":"TAGEnvironment"
+            }
+          },
+          {
+            "Key":"Tier",
+            "Value": {"Ref": "TAGTier1"}
+          },
+          {
+            "Key": "Budget",
+            "Value": {"Ref": "TAGClass"}
+          },
+          {
+            "Key": "BudgetProject",
+            "Value": {
+              "Ref": "TAGClassProject"
+            }
+          },
+          {
+            "Key": "CostCenter",
+            "Value": {
+              "Ref": "TAGCostCenter"
+            }
+          },
+          {
+            "Key": "SecurityGroupID",
+            "Value": {
+              "Ref": "SGIDEC2"
+            }
+          }
+
+        ]
+
+      }
+    },
+    "ComponentSGforELB":{
+      "Type":"AWS::EC2::SecurityGroup",
+      "Metadata" : {
+        "Comment1" : "This is the security group for EC2 Test Web App server",
+        "Comment2" : "The security group is linked with template Test_Server.template",
+        "Comment3" : "Allow HTTP and HTTPS from ELB"
+
+      },
+      "Properties":{
+        "GroupDescription":"Allow http to client host",
+        "VpcId":{
+          "Fn::ImportValue":{
+            "Fn::Sub":"Export::${TAGEnvironment}-VPC"
+          }
+        },
+        "Tags":[
+          {
+            "Key":"Name",
+            "Value": {"Fn::Join": ["",["SG-ELB-",{"Ref": "TAGPROJECT"}]]}
+          },
+
+          {
+            "Key":"Environment",
+            "Value":{
+              "Ref":"TAGEnvironment"
+            }
+          },
+          {
+            "Key":"Tier",
+            "Value": {"Ref": "TAGTier1"}
+          },
+          {
+            "Key": "Budget",
+            "Value": {"Ref": "TAGClass"}
+          },
+          {
+            "Key": "BudgetProject",
+            "Value": {
+              "Ref": "TAGClassProject"
+            }
+          },
+          {
+            "Key": "CostCenter",
+            "Value": {
+              "Ref": "TAGCostCenter"
+            }
+          },
+          {
+            "Key": "SecurityGroupID",
+            "Value": {
+              "Ref": "SGIDELB"
+            }
+          }
+        ],
+        "SecurityGroupIngress":[
+          {"IpProtocol":"tcp","FromPort":"80","ToPort":"80","CidrIp":"0.0.0.0/0","Description": "Access ELB from internet."},
+          {"IpProtocol":"tcp","FromPort":"443","ToPort":"443","CidrIp":"0.0.0.0/0","Description": "Access ELB from internet."}
+
+        ]
+      }
+    }
+
+
+  },
+  "Outputs":{
+    "ComponentSGInforfrastructure":{
+      "Description":"The security group ID to use for public EC2 instance",
+      "Value":{
+        "Fn::GetAtt":[
+          "ComponentSGforInfrastructure",
+          "GroupId"
+        ]
+      },
+
+      "Export": { "Name": {"Fn::Sub": "Export::${TAGPROJECT}-SGEC2"}}
+
+    },
+    "ComponentSGInforELB":{
+      "Description":"The security group ID to use for Elastic Load Balancer",
+      "Value":{
+        "Fn::GetAtt":[
+          "ComponentSGforELB",
+          "GroupId"
+        ]
+      },
+
+      "Export": { "Name": {"Fn::Sub": "Export::${TAGPROJECT}-SGELB"}}
+
+    }
+
+
+  }
+}

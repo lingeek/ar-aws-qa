@@ -1,0 +1,860 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "VPC QA environment - Generated from Jenkins",
+  "Parameters" : {
+    "TAGProject": {
+      "Description": "Project name",
+      "Type": "String",
+      "Default": "QAEnvironment"
+    },
+
+    "TAGInternetGW": {
+      "Description": "TAG Internet Gateway Name",
+      "Type": "String",
+      "Default": "QA-IGW"
+    },
+    "TAGPublicRouteTable": {
+      "Description": "TAG Public Router Table Name",
+      "Type": "String",
+      "Default": "QA-Public-Route-Table"
+    },
+    "TAGPrivateRouteTable": {
+      "Description": "TAG Private Router Table Name",
+      "Type": "String",
+      "Default": "QA-Private-Route-Table"
+    },
+    "TAGPublicNetworkACL": {
+      "Description": "TAG Public Network Access List Name",
+      "Type": "String",
+      "Default": "QA-Public-NACL"
+    },
+    "TAGNATGateway": {
+      "Description": "TAG NAT Gateway Name",
+      "Type": "String",
+      "Default": "QA-NAT-GW"
+    },
+    "TAGExternal": {
+      "Description": "Tier 1 network, External network.",
+      "Type": "String",
+      "Default": "Public"
+    },
+    "TAGVPCName": {
+      "Description": "VPC name",
+      "Type": "String",
+      "Default": "QA-VPC"
+    },
+    "TAGEnvironment": {
+      "Description": "Define environment",
+      "Type": "String",
+      "Default": "QA"
+    },
+    "TAGPublicSubnetA": {
+      "Description": "External network segment A",
+      "Type": "String",
+      "Default": "QA-PublicSubnet-A"
+    },
+    "TAGPublicSubnetB": {
+      "Description": "External network segment B",
+      "Type": "String",
+      "Default": "QA-PublicSubnet-B"
+    },
+    "TAGPublicSubnetC": {
+      "Description": "External network segment C",
+      "Type": "String",
+      "Default": "QA-PublicSubnet-C"
+    },
+    "TAGPrivateSubnetA": {
+      "Description": "Internal network segment A",
+      "Type": "String",
+      "Default": "QA-PrivateSubnet-A"
+    },
+    "TAGPrivateSubnetB": {
+      "Description": "Internal network segment B",
+      "Type": "String",
+      "Default": "QA-PrivateSubnet-B"
+    },
+    "TAGPrivateSubnetC": {
+      "Description": "Internal network segment C",
+      "Type": "String",
+      "Default": "QA-PrivateSubnet-C"
+    },
+    "TAGZoneA": {
+      "Description": "US West (Oregon)-2a",
+      "Type": "String",
+      "Default": "us-west-2a"
+    },
+    "TAGZoneB": {
+      "Description": "US West (Oregon)-2b",
+      "Type": "String",
+      "Default": "us-west-2b"
+    },
+    "TAGZoneC": {
+      "Description": "US West (Oregon)-2c",
+      "Type": "String",
+      "Default": "us-west-2c"
+    },
+    "TAGRegion": {
+      "Description": "Network region",
+      "Type": "String",
+      "Default": "West-Oregon"
+    },
+    "TAGLevel1" : {
+      "Description" : "Access Level Tier 1",
+      "Type" : "Number",
+      "Default" : "1"
+
+
+    },
+    "TAGLevel2" : {
+      "Description" : "Access Level Tier 2",
+      "Type" : "Number",
+      "Default" : "2"
+
+
+    },
+    "TAGLevel3" : {
+      "Description" : "Access Level Tier 3",
+      "Type" : "Number",
+      "Default" : "3"
+
+
+    },
+
+    "TAGClass" : {
+      "Description" : "Accounting class",
+      "Type" : "String",
+      "Default" : "AR-QA"
+
+
+    },
+    "TAGClassProject" : {
+      "Description" : "Accounting class for project",
+      "Type" : "String",
+      "Default" : "AR-QA"
+
+
+    }
+
+  },
+  "Mappings": {
+    "SubnetConfig": {
+      "VPC": {
+        "CIDR": "172.2.0.0/16"
+      },
+      "PublicSubnetA": {
+        "CIDR": "172.2.0.0/21"
+
+      },
+      "PublicSubnetB" : {
+        "CIDR": "172.2.8.0/21"
+
+      },
+      "PublicSubnetC" : {
+        "CIDR": "172.2.16.0/21"
+      },
+      "PrivateSubnetA": {
+        "CIDR": "172.2.24.0/21"
+      },
+      "PrivateSubnetB": {
+        "CIDR": "172.2.32.0/21"
+      },
+      "PrivateSubnetC": {
+        "CIDR": "172.2.40.0/21"
+      }
+
+    }
+  },
+  "Resources": {
+    "ComponentVPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true",
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "SubnetConfig",
+            "VPC",
+            "CIDR"
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "StackName",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {"Ref": "TAGVPCName"}
+          },
+          {
+            "Key": "Environment",
+            "Value": {"Ref": "TAGEnvironment"}
+          }
+        ]
+      }
+    },
+    "ComponentSubnetPublicA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "ComponentVPC"
+        },
+        "AvailabilityZone" : {"Ref": "TAGZoneA"},
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "SubnetConfig",
+            "PublicSubnetA",
+            "CIDR"
+
+          ]
+        },
+        "MapPublicIpOnLaunch": "true",
+        "Tags": [
+          {
+            "Key": "StackName",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          },
+          {
+            "Key": "Network",
+            "Value": {"Ref": "TAGPublicSubnetA"}
+          },
+          {
+            "Key": "Name",
+            "Value": {"Ref": "TAGPublicSubnetA"}
+          },
+          {
+            "Key": "Environment",
+            "Value": {"Ref": "TAGEnvironment"}
+          },
+          {
+            "Key": "AZ",
+            "Value": {"Ref": "TAGZoneA"}
+          },
+          {
+            "Key": "Region",
+            "Value": {"Ref": "TAGRegion"}
+          },
+          {
+            "Key": "Tier",
+            "Value": "TAGLevel1"
+          }
+        ]
+      }
+    },
+    "ComponentSubnetPublicB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "ComponentVPC"
+        },
+        "AvailabilityZone" : {"Ref": "TAGZoneB"},
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "SubnetConfig",
+            "PublicSubnetB",
+            "CIDR"
+
+          ]
+        },
+        "MapPublicIpOnLaunch": "true",
+        "Tags": [
+          {
+            "Key": "StackName",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          },
+          {
+            "Key": "Network",
+            "Value": {"Ref": "TAGPublicSubnetB"}
+          },
+          {
+            "Key": "Name",
+            "Value": {"Ref": "TAGPublicSubnetB"}
+          },
+          {
+            "Key": "Environment",
+            "Value": {"Ref": "TAGEnvironment"}
+          },
+          {
+            "Key": "AZ",
+            "Value": {"Ref": "TAGZoneB"}
+          },
+          {
+            "Key": "Region",
+            "Value": {"Ref": "TAGRegion"}
+          },
+          {
+            "Key": "Tier",
+            "Value": "TAGLevel1"
+          }
+        ]
+      }
+    },
+    "ComponentSubnetPublicC": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "ComponentVPC"
+        },
+        "AvailabilityZone" : {"Ref": "TAGZoneC"},
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "SubnetConfig",
+            "PublicSubnetC",
+            "CIDR"
+
+          ]
+        },
+        "MapPublicIpOnLaunch": "true",
+        "Tags": [
+          {
+            "Key": "StackName",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          },
+          {
+            "Key": "Network",
+            "Value": {"Ref": "TAGPublicSubnetC"}
+          },
+          {
+            "Key": "Name",
+            "Value": {"Ref": "TAGPublicSubnetC"}
+          },
+          {
+            "Key": "Environment",
+            "Value": {"Ref": "TAGEnvironment"}
+          },
+          {
+            "Key": "AZ",
+            "Value": {"Ref": "TAGZoneC"}
+          },
+          {
+            "Key": "Region",
+            "Value": {"Ref": "TAGRegion"}
+          },
+          {
+            "Key": "Tier",
+            "Value": "TAGLevel1"
+          }
+        ]
+      }
+    },
+    "ComponentSubnetPrivateA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "ComponentVPC"
+        },
+        "AvailabilityZone" : {"Ref": "TAGZoneA"},
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "SubnetConfig",
+            "PrivateSubnetA",
+            "CIDR"
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "StackName",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          },
+          {
+            "Key": "Network",
+            "Value": {"Ref": "TAGPrivateSubnetA"}
+          },
+          {
+            "Key": "Name",
+            "Value": {"Ref": "TAGPrivateSubnetA"}
+          },
+          {
+            "Key": "Environment",
+            "Value": {"Ref": "TAGEnvironment"}
+          },
+          {
+            "Key": "AZ",
+            "Value": {"Ref": "TAGZoneA"}
+          },
+          {
+            "Key": "Region",
+            "Value": {"Ref": "TAGRegion"}
+          },
+          {
+            "Key": "Tier",
+            "Value": "TAGLevel2"
+          }
+        ]
+      }
+    },
+    "ComponentSubnetPrivateB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "ComponentVPC"
+        },
+        "AvailabilityZone" : {"Ref": "TAGZoneB"},
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "SubnetConfig",
+            "PrivateSubnetB",
+            "CIDR"
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "StackName",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          },
+          {
+            "Key": "Network",
+            "Value": {"Ref": "TAGPrivateSubnetB"}
+          },
+          {
+            "Key": "Name",
+            "Value": {"Ref": "TAGPrivateSubnetB"}
+          },
+          {
+            "Key": "Environment",
+            "Value": {"Ref": "TAGEnvironment"}
+          },
+          {
+            "Key": "AZ",
+            "Value": {"Ref": "TAGZoneB"}
+          },
+          {
+            "Key": "Region",
+            "Value": {"Ref": "TAGRegion"}
+          },
+          {
+            "Key": "Tier",
+            "Value": "TAGLevel2"
+          }
+        ]
+      }
+    },
+    "ComponentSubnetPrivateC": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "ComponentVPC"
+        },
+        "AvailabilityZone" : {"Ref": "TAGZoneC"},
+        "CidrBlock": {
+          "Fn::FindInMap": [
+            "SubnetConfig",
+            "PrivateSubnetC",
+            "CIDR"
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "StackName",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          },
+          {
+            "Key": "Network",
+            "Value": {"Ref": "TAGPrivateSubnetC"}
+          },
+          {
+            "Key": "Name",
+            "Value": {"Ref": "TAGPrivateSubnetC"}
+          },
+          {
+            "Key": "Environment",
+            "Value": {"Ref": "TAGEnvironment"}
+          },
+          {
+            "Key": "AZ",
+            "Value": {"Ref": "TAGZoneC"}
+          },
+          {
+            "Key": "Region",
+            "Value": {"Ref": "TAGRegion"}
+          },
+          {
+            "Key": "Tier",
+            "Value": "TAGLevel2"
+          }
+        ]
+      }
+    },
+    "ComponentInternetGateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "StackName",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          },
+          {
+            "Key": "Network",
+            "Value": {"Ref": "TAGExternal"}
+          },
+          {
+            "Key": "Environment",
+            "Value": {"Ref": "TAGEnvironment"}
+          },
+          {
+            "Key": "Name",
+            "Value": "TAGInternetGW"
+          }
+        ]
+      }
+    },
+    "ComponentGatewayToInternet": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "ComponentVPC"
+        },
+        "InternetGatewayId": {
+          "Ref": "ComponentInternetGateway"
+        }
+      }
+    },
+    "ComponentPublicRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "ComponentVPC"
+        },
+        "Tags": [
+          {
+            "Key": "StackName",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          },
+          {
+            "Key": "Network",
+            "Value": {"Ref": "TAGExternal"}
+          },
+          {
+            "Key": "Name",
+            "Value": {"Ref": "TAGPublicRouteTable"}
+          },
+          {
+            "Key": "Environment",
+            "Value": {"Ref": "TAGEnvironment"}
+          }
+        ]
+      }
+    },
+    "ComponentPublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "ComponentGatewayToInternet",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "ComponentPublicRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "ComponentInternetGateway"
+        }
+
+      }
+    },
+    "PublicSubnetRouteTableAssociationA": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "ComponentSubnetPublicA"
+        },
+        "RouteTableId": {
+          "Ref": "ComponentPublicRouteTable"
+        }
+      }
+    },
+    "PublicSubnetRouteTableAssociationB": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "ComponentSubnetPublicB"
+        },
+        "RouteTableId": {
+          "Ref": "ComponentPublicRouteTable"
+        }
+      }
+    },
+    "PublicSubnetRouteTableAssociationC": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "ComponentSubnetPublicC"
+        },
+        "RouteTableId": {
+          "Ref": "ComponentPublicRouteTable"
+        }
+      }
+    },
+    "PublicNetworkAcl": {
+      "Type": "AWS::EC2::NetworkAcl",
+      "Properties": {
+        "VpcId": {
+          "Ref": "ComponentVPC"
+        },
+        "Tags": [
+          {
+            "Key": "StackName",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          },
+          {
+            "Key": "Network",
+            "Value": {"Ref": "TAGExternal"}
+          },
+          {
+            "Key": "Name",
+            "Value": {"Ref": "TAGPublicNetworkACL"}
+          },
+          {
+            "Key": "Environment",
+            "Value": {"Ref": "TAGEnvironment"}
+          }
+        ]
+      }
+    },
+    "InboundHTTPPublicNetworkAclEntry": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "PublicNetworkAcl"
+        },
+        "RuleNumber": "100",
+        "Protocol": "-1",
+        "RuleAction": "allow",
+        "Egress": "false",
+        "CidrBlock": "0.0.0.0/0",
+        "PortRange": {
+          "From": "0",
+          "To": "65535"
+        }
+      }
+    },
+    "OutboundPublicNetworkAclEntry": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "PublicNetworkAcl"
+        },
+        "RuleNumber": "100",
+        "Protocol": "-1",
+        "RuleAction": "allow",
+        "Egress": "true",
+        "CidrBlock": "0.0.0.0/0",
+        "PortRange": {
+          "From": "0",
+          "To": "65535"
+        }
+      }
+    },
+    "PublicSubnetNetworkAclAssociationA": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "ComponentSubnetPublicA"
+        },
+        "NetworkAclId": {
+          "Ref": "PublicNetworkAcl"
+        }
+      }
+    },
+    "PublicSubnetNetworkAclAssociationB": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "ComponentSubnetPublicB"
+        },
+        "NetworkAclId": {
+          "Ref": "PublicNetworkAcl"
+        }
+      }
+    },
+    "PublicSubnetNetworkAclAssociationC": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "ComponentSubnetPublicC"
+        },
+        "NetworkAclId": {
+          "Ref": "PublicNetworkAcl"
+        }
+      }
+    },
+    "ComponentNATGatewaySubnetA": {
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "Tags" : [
+          {
+            "Key": "Name",
+            "Value": {"Ref": "TAGNATGateway"}
+          },
+          {
+            "Key": "Environment",
+            "Value": {"Ref": "TAGEnvironment"}
+          }
+        ],
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "ComponentElasticIPSubnetA",
+            "AllocationId"
+          ]
+        },
+        "SubnetId": {
+          "Ref": "ComponentSubnetPublicA"
+        }
+      }
+    },
+    "ComponentElasticIPSubnetA": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc"
+      }
+    },
+    "PrivateRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "ComponentVPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {"Ref": "TAGPrivateRouteTable"}
+          },
+          {
+            "Key": "Environment",
+            "Value": {"Ref": "TAGEnvironment"}
+          }
+        ]
+      }
+    },
+    "PrivateRouteToInternet": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "ComponentNATGatewaySubnetA"
+        }
+      }
+    },
+    "PrivateSubnetRouteTableAssociationA": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "ComponentSubnetPrivateA"
+        },
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        }
+      }
+    },
+    "PrivateSubnetRouteTableAssociationB": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "ComponentSubnetPrivateB"
+        },
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        }
+      }
+    },
+    "PrivateSubnetRouteTableAssociationC": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "ComponentSubnetPrivateC"
+        },
+        "RouteTableId": {
+          "Ref": "PrivateRouteTable"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "VPCId": {
+      "Description": "VPC ID",
+      "Value": {
+        "Ref": "ComponentVPC"
+      },
+      "Export": { "Name": {"Fn::Sub": "Export::${TAGEnvironment}-VPC"}}},
+    "PublicSubnetA": {
+      "Description": "SubnetId of the public subnet A",
+      "Value": {
+        "Ref": "ComponentSubnetPublicA"
+      },
+      "Export": { "Name": {"Fn::Sub": "Export::${TAGEnvironment}-SubnetPublicA"}}},
+    "PublicSubnetB": {
+      "Description": "SubnetId of the public subnet B",
+      "Value": {
+        "Ref": "ComponentSubnetPublicB"
+      },
+      "Export": { "Name": {"Fn::Sub": "Export::${TAGEnvironment}-SubnetPublicB"}}},
+    "PublicSubnetC": {
+      "Description": "SubnetId of the public subnet C",
+      "Value": {
+        "Ref": "ComponentSubnetPublicC"
+      },
+      "Export": { "Name": {"Fn::Sub": "Export::${TAGEnvironment}-SubnetPublicC"}}},
+    "SubnetPrivateA": {
+      "Description": "SubnetId of the private subnet A",
+      "Value": {
+        "Ref": "ComponentSubnetPrivateA"
+      },
+      "Export": { "Name": {"Fn::Sub": "Export::${TAGEnvironment}-SubnetPrivateA"}}},
+    "SubnetPrivateB": {
+      "Description": "SubnetId of the private subnet B",
+      "Value": {
+        "Ref": "ComponentSubnetPrivateB"
+      },
+      "Export": { "Name": {"Fn::Sub": "Export::${TAGEnvironment}-SubnetPrivateB"}}},
+    "SubnetPrivateC": {
+      "Description": "SubnetId of the private subnet C",
+      "Value": {
+        "Ref": "ComponentSubnetPrivateC"
+      },
+      "Export": { "Name": {"Fn::Sub": "Export::${TAGEnvironment}-SubnetPrivateC"}}},
+    "PublicRouteTableVPC": {
+      "Description": "Public Route Table",
+      "Value": {
+        "Ref": "ComponentPublicRouteTable"
+      },
+      "Export": { "Name": {"Fn::Sub": "Export::${TAGEnvironment}-PublicRouteTable"}}},
+    "PrivateRouteTableVPC": {
+      "Description": "Private Route Table",
+      "Value": {
+        "Ref": "PrivateRouteTable"
+      },
+      "Export": { "Name": {"Fn::Sub": "Export::${TAGEnvironment}-PrivateRouteTable"}}},
+    "DefaultSecurityGroup": {
+      "Description": "DefaultSecurityGroup Id ",
+      "Value": {
+        "Fn::GetAtt": [
+          "ComponentVPC",
+          "DefaultSecurityGroup"
+        ]
+      },
+      "Export": {
+        "Name": "Main::Export"
+      }
+    }
+  }
+}
